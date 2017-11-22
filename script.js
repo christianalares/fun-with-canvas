@@ -1,10 +1,15 @@
-const randomFromTo = (min, max) => {
-	return Math.floor(Math.random() * (max - min + 1)) + min;
+const randomFromTo = (min, max, canBeZero = true) => {
+	let numberToReturn = Math.floor(Math.random() * (max - min + 1)) + min
+	
+	return (!canBeZero && numberToReturn === 0)
+		? randomFromTo(min, max, false)
+		: numberToReturn
 }
 
 const CONFIG = {
 	width: window.innerWidth,
-	height: window.innerHeight
+	height: window.innerHeight,
+	fps: 60
 }
 
 const canvas = document.querySelector('#canvas')
@@ -14,24 +19,32 @@ canvas.height = CONFIG.height
 
 const ctx = canvas.getContext('2d')
 
+let MOUSE_X = CONFIG.width/2
+let MOUSE_Y = CONFIG.height/2
+
+canvas.addEventListener('mousemove', (e) => {
+    MOUSE_X = e.clientX
+	MOUSE_Y = e.clientY
+})
+
 class Ball {
 	// ----------------------------------------
 	// Constructor...
 	// ----------------------------------------
-	constructor(posX, posY, radius, color) {
+	constructor(posX = 50, posY = 50, radius = 50, speedX = 1, speedY = 1, color = '#000') {
 		this.posX = posX
 		this.posY = posY
 		this.radius = radius
 		this.color = color
 
-		this.speedX = 1
-		this.speedY = 1
+		this.speedX = speedX
+		this.speedY = speedY
 	}
 
 	// ----------------------------------------
 	// Render the ball on the canvas
 	// ----------------------------------------
-	render() {
+	spawn() {
 		ctx.beginPath()
 		ctx.arc(this.posX, this.posY, this.radius, 0, Math.PI*2, true)
 		ctx.fillStyle = this.color
@@ -71,16 +84,50 @@ class Ball {
 	}
 }
 
-
-const balls = []
-
-for (let i = 0; i < 100; i++) {
-	const size = randomFromTo(20, 60)
-	balls.push(new Ball(CONFIG.width/2, CONFIG.height/2, size, `rgba(${randomFromTo(0, 255)}, ${randomFromTo(0, 255)}, ${randomFromTo(0, 255)}, ${Math.random()})`))
-	balls[i].setSpeed(randomFromTo(-10, 10), randomFromTo(-10, 10))
+class Ship {
+	constructor() {
+		this.size = 50
+	}
+	spawn() {
+		ctx.fillStyle = '#000'
+		// ctx.fillRect((CONFIG.width/2) - (this.size/2), (CONFIG.height/2) - (this.size/2), this.size, this.size)
+		ctx.fillRect(MOUSE_X - (this.size/2), MOUSE_Y - (this.size/2), this.size, this.size)
+	}
 }
+const balls = []
+const ship = new Ship()
 
-let fps = 60
+// Draw a Ball every second
+setInterval( () => {
+	const isVertical = Math.random() > 0.5
+	const onLeftSide = Math.random() > 0.5
+	const onTopSide  = Math.random() > 0.5
+
+	const radius     = randomFromTo(5, 30)
+	const posX       = isVertical ? (onLeftSide ? radius + 20 : (CONFIG.width - radius) - 20) : randomFromTo(radius + 20, (CONFIG.width - radius) - 20)
+	const posY       = isVertical ? randomFromTo(radius + 20, (CONFIG.height - radius) - 20) : onTopSide ? radius + 20 : (CONFIG.height - radius) - 20
+	
+	const colorRed   = randomFromTo(50, 240)
+	const colorGreen = randomFromTo(50, 240)
+	const colorBlue  = randomFromTo(50, 240)
+	const colorAlpha = 1 || Math.random()
+
+	const speedX     = randomFromTo(-1, 1, false)
+	const speedY     = randomFromTo(-1, 1, false)
+
+	balls.push(
+		new Ball(
+			posX,
+			posY,
+			radius,
+			speedX,
+			speedY,
+			`rgba(${colorRed}, ${colorGreen}, ${colorBlue}, ${colorAlpha})`
+		)
+	)
+}, 1000)
+
+let fps = CONFIG.fps
 let interval = 1000/fps
 let lastTime = (new Date()).getTime()
 let currentTime = 0
@@ -96,9 +143,11 @@ const gameLoop = () => {
 		clearScreen()
 
 		balls.forEach(ball => {
-			ball.render()
+			ball.spawn()
 			ball.move()
 		})
+
+		ship.spawn()
 
 		lastTime = currentTime - (delta % interval)
 	}
