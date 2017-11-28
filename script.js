@@ -1,17 +1,3 @@
-const randomFromTo = (min, max, canBeZero = true) => {
-	let numberToReturn = Math.floor(Math.random() * (max - min + 1)) + min
-	
-	return (!canBeZero && numberToReturn === 0)
-		? randomFromTo(min, max, false)
-		: numberToReturn
-}
-
-const CONFIG = {
-	width: window.innerWidth,
-	height: window.innerHeight,
-	fps: 60
-}
-
 const canvas = document.querySelector('#canvas')
 
 canvas.width = CONFIG.width
@@ -27,73 +13,6 @@ canvas.addEventListener('mousemove', (e) => {
 	MOUSE_Y = e.clientY
 })
 
-class Ball {
-	// ----------------------------------------
-	// Constructor...
-	// ----------------------------------------
-	constructor(posX = 50, posY = 50, radius = 50, speedX = 1, speedY = 1, color = '#000') {
-		this.posX = posX
-		this.posY = posY
-		this.radius = radius
-		this.color = color
-
-		this.speedX = speedX
-		this.speedY = speedY
-	}
-
-	// ----------------------------------------
-	// Render the ball on the canvas
-	// ----------------------------------------
-	spawn() {
-		ctx.beginPath()
-		ctx.arc(this.posX, this.posY, this.radius, 0, Math.PI*2, true)
-		ctx.fillStyle = this.color
-		ctx.closePath()
-		ctx.fill()
-	}
-
-	// ----------------------------------------
-	// This moves the balls position with the speed
-	// ----------------------------------------
-	move() {
-		this.posX += this.speedX
-		this.posY += this.speedY
-		
-		this.checkWalls()
-	}
-
-	// ----------------------------------------
-	// If we want to change the speed we can do it here
-	// ----------------------------------------
-	setSpeed(speedX, speedY) {
-		this.speedX = speedX
-		this.speedY = speedY
-	}
-
-	// ----------------------------------------
-	// Check collision
-	// ----------------------------------------
-	checkWalls() {
-		if(this.posX + this.radius >= CONFIG.width || this.posX - this.radius <= 0) {
-			this.speedX *= -1
-		}
-
-		if(this.posY + this.radius >= CONFIG.height || this.posY - this.radius <= 0) {
-			this.speedY *= -1
-		}
-	}
-}
-
-class Ship {
-	constructor() {
-		this.size = 50
-	}
-	spawn() {
-		ctx.fillStyle = '#000'
-		// ctx.fillRect((CONFIG.width/2) - (this.size/2), (CONFIG.height/2) - (this.size/2), this.size, this.size)
-		ctx.fillRect(MOUSE_X - (this.size/2), MOUSE_Y - (this.size/2), this.size, this.size)
-	}
-}
 const balls = []
 const ship = new Ship()
 
@@ -107,13 +26,13 @@ setInterval( () => {
 	const posX       = isVertical ? (onLeftSide ? radius + 20 : (CONFIG.width - radius) - 20) : randomFromTo(radius + 20, (CONFIG.width - radius) - 20)
 	const posY       = isVertical ? randomFromTo(radius + 20, (CONFIG.height - radius) - 20) : onTopSide ? radius + 20 : (CONFIG.height - radius) - 20
 	
-	const colorRed   = randomFromTo(50, 240)
-	const colorGreen = randomFromTo(50, 240)
-	const colorBlue  = randomFromTo(50, 240)
+	const colorRed   = randomFromTo(50, 255)
+	const colorGreen = randomFromTo(50, 255)
+	const colorBlue  = randomFromTo(50, 255)
 	const colorAlpha = 1 || Math.random()
 
-	const speedX     = randomFromTo(-1, 1, false)
-	const speedY     = randomFromTo(-1, 1, false)
+	const speedX     = randomFromTo(-5, 5, false)
+	const speedY     = randomFromTo(-5, 5, false)
 
 	balls.push(
 		new Ball(
@@ -125,7 +44,7 @@ setInterval( () => {
 			`rgba(${colorRed}, ${colorGreen}, ${colorBlue}, ${colorAlpha})`
 		)
 	)
-}, 1000)
+}, 2000)
 
 let fps = CONFIG.fps
 let interval = 1000/fps
@@ -145,6 +64,14 @@ const gameLoop = () => {
 		balls.forEach(ball => {
 			ball.spawn()
 			ball.move()
+
+
+
+			if( (ball.posX + ball.radius >= MOUSE_X - ship.size/2 && (ball.posX - ball.radius) <= (MOUSE_X + ship.size/2))
+				&& (ball.posY + ball.radius >= MOUSE_Y - ship.size/2 && (ball.posY - ball.radius) <= (MOUSE_Y + ship.size/2)) 
+				&& ( Math.sqrt( (Math.pow(ship.size, ship.size) * 2) )/2 <= ball.radius )) {
+				// alert('collision')
+			}
 		})
 
 		ship.spawn()
@@ -156,6 +83,9 @@ const gameLoop = () => {
 
 const clearScreen = () => {
 	ctx.clearRect(0, 0, CONFIG.width, CONFIG.height)
+	// ctx.fillStyle = 'rgba(255, 255, 255, .05)'
+	// ctx.fillStyle = '#f6f6f6'
+	// ctx.fillRect(0, 0, CONFIG.width, CONFIG.height)
 }
 
 window.requestAnimationFrame(gameLoop)
